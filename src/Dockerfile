@@ -12,7 +12,7 @@ RUN pip install --no-cache-dir -r requirements.txt
 
 COPY agentboard ./agentboard
 COPY catalog ./catalog
-COPY demo.py ./
+COPY main.py ./
 
 RUN useradd -r -u 10001 board && mkdir -p /data && chown board /data
 USER board

@@ -1,0 +1,84 @@
+# Cloud (EKS/GKE/AKS) or on-prem Kubernetes (k3s, OpenShift):
+#   kubectl apply -f src/deploy/k8s/agentboard.yaml
+# Point DATABASE_URL at a managed Postgres (RDS / Cloud SQL / Azure DB) or the in-cluster one below.
+apiVersion: v1
+kind: Namespace
+metadata: { name: agentboard }
+---
+apiVersion: v1
+kind: Secret
+metadata: { name: agentboard, namespace: agentboard }
+stringData:
+  DATABASE_URL: postgresql+psycopg2://board:board@postgres:5432/agentboard
+  REGISTRATION_KEY: change-me
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata: { name: agentboard, namespace: agentboard }
+spec:
+  replicas: 3
+  selector: { matchLabels: { app: agentboard } }
+  template:
+    metadata: { labels: { app: agentboard } }
+    spec:
+      securityContext: { runAsNonRoot: true, runAsUser: 10001 }
+      containers:
+        - name: api
+          image: ghcr.io/YOUR_ORG/agentboard:0.1.0
+          ports: [{ containerPort: 8000 }]
+          envFrom: [{ secretRef: { name: agentboard } }]
+          env: [{ name: AGENT_MANIFEST_DIR, value: "" }]
+          readinessProbe: { httpGet: { path: /readyz, port: 8000 }, periodSeconds: 5 }
+          livenessProbe: { httpGet: { path: /healthz, port: 8000 }, periodSeconds: 15 }
+          resources:
+            requests: { cpu: 100m, memory: 128Mi }
+            limits: { cpu: "1", memory: 512Mi }
+---
+apiVersion: autoscaling/v2
+kind: HorizontalPodAutoscaler
+metadata: { name: agentboard, namespace: agentboard }
+spec:
+  scaleTargetRef: { apiVersion: apps/v1, kind: Deployment, name: agentboard }
+  minReplicas: 2
+  maxReplicas: 20
+  metrics:
+    - type: Resource
+      resource: { name: cpu, target: { type: Utilization, averageUtilization: 70 } }
+---
+apiVersion: v1
+kind: Service
+metadata: { name: agentboard, namespace: agentboard }
+spec:
+  selector: { app: agentboard }
+  ports: [{ port: 80, targetPort: 8000 }]
+---
+# Minimal in-cluster Postgres for on-prem/dev. Use a managed DB in production cloud.
+apiVersion: apps/v1
+kind: StatefulSet
+metadata: { name: postgres, namespace: agentboard }
+spec:
+  serviceName: postgres
+  replicas: 1
+  selector: { matchLabels: { app: postgres } }
+  template:
+    metadata: { labels: { app: postgres } }
+    spec:
+      containers:
+        - name: postgres
+          image: postgres:16-alpine
+          env:
+            - { name: POSTGRES_USER, value: board }
+            - { name: POSTGRES_PASSWORD, value: board }
+            - { name: POSTGRES_DB, value: agentboard }
+          ports: [{ containerPort: 5432 }]
+          volumeMounts: [{ name: data, mountPath: /var/lib/postgresql/data }]
+  volumeClaimTemplates:
+    - metadata: { name: data }
+      spec: { accessModes: [ReadWriteOnce], resources: { requests: { storage: 5Gi } } }
+---
+apiVersion: v1
+kind: Service
+metadata: { name: postgres, namespace: agentboard }
+spec:
+  selector: { app: postgres }
+  ports: [{ port: 5432 }]

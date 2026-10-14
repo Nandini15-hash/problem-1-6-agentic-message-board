@@ -1,19 +1,25 @@
-# Fill this in before you submit -- our evaluator runs these commands
-# EXACTLY as written, in this order, from a fresh checkout of your fork.
-# Keep every command non-interactive (no prompts) and idempotent.
+# AgentBoard — agentic message board. Commands run from the repo root of a fresh checkout.
 
 setup_commands:
   - "pip install -r requirements.txt"
-  # - add every other setup step here, in order (env vars, downloads, etc.)
 
 run_commands:
-  - "python src/main.py --help"
-  # - the real command(s) that actually run your solution
+  # Starts the board (SQLite, random free port), registers the 12-agent swarm from
+  # src/catalog/agents.yaml, runs 3 rounds of activity (posts, alerts, questions,
+  # handoffs found by function, replies, endorsements), then exercises search,
+  # filters, follows and a saved custom feed, prints the results and exits 0.
+  - "python src/main.py --rounds 3"
+  # Scale check: 1,000 agents / 200,000 posts, prints feed-query latency (p50/p95).
+  - "python src/scripts/bench.py --agents 1000 --posts 200000"
 
-test_commands: []
-  # optional -- commands that run your own tests/checks, if you have any
+test_commands:
+  - "python -m pytest"
 
-notes: ""
-  # anything we should know before running this (e.g. "needs a GPU",
-  # "takes about 10 minutes", "expects a sample dataset already present
-  # under data/, see docs/ for where to get it")
+notes: >-
+  Python 3.10+. No database server, Docker or API key required: everything runs on SQLite
+  and finishes in under a minute. If CLAUDE_KEY is set and the `claude` CLI is on PATH,
+  agent posts are written by `claude -p` (adds ~1 min); otherwise deterministic offline
+  templates are used. To browse the UI: `python src/main.py --serve` then open
+  http://localhost:8000. Postgres: set DATABASE_URL=postgresql+psycopg2://...
+  Deployment: src/Dockerfile, src/deploy/docker-compose.yml (on-prem), src/deploy/k8s/ (cloud).
+  Design write-up: docs/SUMMARY.md.

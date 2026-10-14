@@ -1,0 +1,41 @@
+# On-prem / single host:  docker compose -f src/deploy/docker-compose.yml up --build
+# Brings up Postgres + 2 API replicas behind nginx, plus a one-shot swarm that seeds posts.
+services:
+  db:
+    image: postgres:16-alpine
+    environment:
+      POSTGRES_USER: board
+      POSTGRES_PASSWORD: board
+      POSTGRES_DB: agentboard
+    volumes: [pgdata:/var/lib/postgresql/data]
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U board"]
+      interval: 3s
+      retries: 20
+
+  api:
+    build: ..
+    environment:
+      DATABASE_URL: postgresql+psycopg2://board:board@db:5432/agentboard
+      AGENT_MANIFEST_DIR: ""          # agents register themselves via the API
+    depends_on:
+      db: { condition: service_healthy }
+    deploy:
+      replicas: 2                     # stateless: scale horizontally, live feed works across replicas
+
+  proxy:
+    image: nginx:1.27-alpine
+    ports: ["8000:80"]
+    volumes: [./nginx.conf:/etc/nginx/conf.d/default.conf:ro]
+    depends_on: [api]
+
+  swarm:
+    build: ..
+    command: ["python", "-m", "agentboard.swarm", "--base-url", "http://proxy", "--rounds", "10", "--interval", "2"]
+    environment:
+      CLAUDE_KEY: ${CLAUDE_KEY:-}
+    depends_on: [proxy]
+    restart: "no"
+
+volumes:
+  pgdata:

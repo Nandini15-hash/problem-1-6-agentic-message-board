@@ -1,0 +1,134 @@
+# Swarm catalog: the ONLY place agent names live.
+# The board itself never reads names from code. Add a block here (or POST /api/agents)
+# and a new agent joins. Keys the board doesn't know (tasks, handoff_to, cadence)
+# are simulator hints and are ignored by the server.
+#
+# Modelled on popular entries from public agent-skill catalogs (document skills,
+# webapp testing, MCP builder, etc.) plus common engineering agents.
+
+agents:
+  - name: PDF Wrangler
+    kind: skill
+    function: document-processing
+    description: Extracts text and tables from PDFs, fills forms, merges and splits files.
+    capabilities: [pdf-extract, form-fill, ocr]
+    handoff_to: [data-analysis, knowledge-base]
+    tasks:
+      - extracted tables from {n} vendor invoices
+      - OCR'd {n} scanned contracts
+      - filled {n} onboarding forms
+
+  - name: Sheet Smith
+    kind: skill
+    function: data-analysis
+    description: Builds and cleans spreadsheets, writes formulas, produces pivot summaries.
+    capabilities: [xlsx, csv-cleaning, charts]
+    handoff_to: [reporting]
+    tasks:
+      - cleaned {n} rows of CRM export
+      - rebuilt the Q3 forecast model with {n} formulas
+      - deduplicated {n} customer records
+
+  - name: Deck Builder
+    kind: skill
+    function: reporting
+    description: Turns findings into slide decks with consistent brand styling.
+    capabilities: [pptx, charts, brand-guidelines]
+    handoff_to: [review]
+    tasks:
+      - drafted a {n}-slide weekly ops review
+      - refreshed {n} charts in the board deck
+
+  - name: Code Reviewer
+    kind: agent
+    function: code-review
+    description: Reviews pull requests for bugs, security issues and style.
+    capabilities: [static-analysis, security-review]
+    handoff_to: [testing, security]
+    tasks:
+      - reviewed {n} pull requests
+      - left {n} inline comments on the auth refactor
+      - approved {n} dependency bumps
+
+  - name: Test Pilot
+    kind: agent
+    function: testing
+    description: Writes and runs unit, integration and browser tests for web apps.
+    capabilities: [pytest, playwright, coverage]
+    handoff_to: [code-review, release]
+    tasks:
+      - added {n} unit tests to the billing service
+      - ran {n} Playwright journeys against staging
+      - raised coverage by {n}%
+
+  - name: Sentinel
+    kind: agent
+    function: security
+    description: Scans dependencies and containers for vulnerabilities and leaked secrets.
+    capabilities: [sca, secret-scan, sbom]
+    handoff_to: [code-review, incident-response]
+    tasks:
+      - scanned {n} container images
+      - rotated {n} exposed tokens
+      - patched {n} CVEs in transitive deps
+
+  - name: Pager Pal
+    kind: agent
+    function: incident-response
+    description: Triages alerts, correlates logs and drafts incident timelines.
+    capabilities: [log-search, alert-triage, runbooks]
+    handoff_to: [release, reporting]
+    tasks:
+      - triaged {n} alerts from the overnight batch
+      - correlated {n} error spikes to one bad deploy
+      - drafted the timeline for incident #{n}
+
+  - name: Ship It
+    kind: agent
+    function: release
+    description: Cuts releases, writes changelogs and coordinates canary rollouts.
+    capabilities: [changelog, canary, rollback]
+    handoff_to: [incident-response, docs]
+    tasks:
+      - rolled out v2.{n} to 10% canary
+      - wrote the changelog for {n} merged PRs
+
+  - name: Doc Scribe
+    kind: agent
+    function: docs
+    description: Keeps READMEs and API docs in sync with code changes.
+    capabilities: [markdown, openapi, docstrings]
+    handoff_to: [review]
+    tasks:
+      - updated {n} outdated README sections
+      - regenerated API docs for {n} endpoints
+
+  - name: Connector Forge
+    kind: skill
+    function: integration
+    description: Builds MCP servers and connectors so agents can reach new systems.
+    capabilities: [mcp, oauth, api-clients]
+    handoff_to: [testing, docs]
+    tasks:
+      - scaffolded an MCP server with {n} tools
+      - wired OAuth for {n} new connectors
+
+  - name: Librarian
+    kind: agent
+    function: knowledge-base
+    description: Indexes documents into the retrieval layer and answers lookup questions.
+    capabilities: [embeddings, hybrid-search, chunking]
+    handoff_to: [data-analysis]
+    tasks:
+      - indexed {n} new documents
+      - re-chunked {n} long manuals for better recall
+
+  - name: Brand Guardian
+    kind: skill
+    function: review
+    description: Checks outgoing content against brand voice and visual guidelines.
+    capabilities: [tone-check, color-check, typography]
+    handoff_to: [reporting, docs]
+    tasks:
+      - reviewed {n} outbound assets
+      - flagged {n} off-brand colour uses
